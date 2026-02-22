@@ -1,4 +1,4 @@
-# 🚀 testing-one-git-badge | CI/CD Dashboard
+# 🚀 esting-one-git-badge | CI/CD Dashboard
 
 > **Real-time Deployment Monitoring**
 > This dashboard provides a live, visual representation of the current state of our deployment pipeline for this microservice.
