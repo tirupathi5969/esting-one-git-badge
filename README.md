@@ -1,40 +1,68 @@
-#!/bin/bash
+# aws-build-badges
 
-# Check arguments
-if [ "$#" -ne 2 ]; then
-    echo "Usage: $0 <cloudfront-domain> <pipeline-name>"
-    echo "Example: $0 dsikuhnjgrtfw.cloudfront.net my-pipeline-name"
-    exit 1
-fi
+This tool automatically generates and hosts status badges (SVG) for all CodeBuild projects and CodePipelines in your account.
 
-DOMAIN=$1
-PIPELINE=$2
+## Deployment
 
-# Strip https:// if user provided it
-DOMAIN=$(echo $DOMAIN | sed 's|https://||' | sed 's|/||g')
+- **Stack Name**: `dx-aws-pipeline-badges`
+- **Region**: `ca-central-1`
 
-echo "---"
-echo "### 📊 Live Stage Monitoring ($PIPELINE)"
-echo ""
-echo "| Stage | Activity | Current Status | Last Updated | 🔑 Commit | 👤 Author |"
-echo "| :--- | :--- | :--- | :--- | :--- | :--- |"
+### Create Stack
+Only to be performed if the stack is not created yet.
 
-# List of stages to generate rows for
-STAGES=("Source" "Build" "DevDeploy" "StagingDeploy" "UATDeploy" "ProductionDeploy")
-LABELS=("01. Source" "02. Build" "03. Dev" "04. Staging" "05. UAT" "06. Production")
-ACTIVITIES=("📡 Listener" "🏗️ Compile" "🧪 Deploy" "🚀 Deploy" "🚥 Review" "💎 Live")
+```console
+aws cloudformation create-stack \
+  --stack-name dx-aws-pipeline-badges \
+  --template-body file://aws_build_badges_cf_template.yml \
+  --region ca-central-1 \
+  --capabilities CAPABILITY_NAMED_IAM \
+  --profile <profile-name>
+```
 
-for i in "${!STAGES[@]}"; do
-    STAGE=${STAGES[$i]}
-    LABEL=${LABELS[$i]}
-    ACT=${ACTIVITIES[$i]}
-    
-    # Path format: domain/pipeline/pipeline-stage.svg
-    BASE_URL="https://$DOMAIN/$PIPELINE/$PIPELINE-$STAGE"
-    
-    echo "| **$LABEL** | $ACT | ![Status]($BASE_URL.svg) | ![Time]($BASE_URL-timestamp.svg) | ![Commit]($BASE_URL-commitId.svg) | ![Author]($BASE_URL-author.svg) |"
-done
+### Update existing stack
 
-echo ""
-echo "---"
-echo "<sub>*Status badges feature live **animated progress bars** during active deployments.*</sub>"
+```console
+aws cloudformation update-stack \
+  --stack-name dx-aws-pipeline-badges \
+  --template-body file://aws_build_badges_cf_template.yml \
+  --region ca-central-1 \
+  --capabilities CAPABILITY_NAMED_IAM \
+  --profile <profile-name>
+```
+
+### Delete an existing Stack
+
+```console
+aws cloudformation delete-stack \
+  --stack-name dx-aws-pipeline-badges \
+  --profile <profile-name>
+```
+
+## Using the Badges
+
+The tool automatically monitors all resources and generates SVGs. You can add them to your `README.md`.
+
+### Metadata Badge Paths
+The engine generates 4 types of badges for every resource:
+1. **Status**: `https://<DOMAIN>/<NAME>/<NAME>.svg`
+2. **Commit**: `https://<DOMAIN>/<NAME>/<NAME>-commitId.svg`
+3. **Timer**: `https://<DOMAIN>/<NAME>/<NAME>-timestamp.svg`
+4. **Author**: `https://<DOMAIN>/<NAME>/<NAME>-author.svg`
+
+---
+
+## 🚀 Dashboard Generator (Recommended)
+
+Instead of editing URLs manually, use the included script to generate a full CI/CD dashboard table:
+
+```bash
+bash scripts/generate-readme-table.sh <domain> <pipeline-name>
+```
+
+### Example Output:
+| Stage | Activity | Current Status | Last Updated | 🔑 Commit | 👤 Author |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **01. Source** | 📡 Listener | ![Status](https://d123.cloudfront.net/my-pipeline/my-pipeline-Source.svg) | ![Time](https://d123.cloudfront.net/my-pipeline/my-pipeline-Source-timestamp.svg) | ![Commit](https://d123.cloudfront.net/my-pipeline/my-pipeline-Source-commitId.svg) | ![Author](https://d123.cloudfront.net/my-pipeline/my-pipeline-Source-author.svg) |
+
+---
+<sub>*Status badges feature live **animated progress bars** during active deployments.*</sub>
